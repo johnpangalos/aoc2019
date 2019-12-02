@@ -9,19 +9,14 @@ import (
 	"strings"
 )
 
-// ScannerInterface describes
-type ScannerInterface interface {
-	CommaStringParse(string) []string
-}
-
-// ScanWrap extends the bufio Scanner struct and adds functions on
+// Scanner extends the bufio Scanner struct and adds functions on
 // it throught ScannerInterface
-type ScanWrap struct {
-	Scanner *bufio.Scanner
+type Scanner struct {
+	*bufio.Scanner
 }
 
 // NewScanner reads the input var @path and returns a bufio scanner
-func NewScanner(path string) (*ScanWrap, *os.File, error) {
+func NewScanner(path string) (*Scanner, *os.File, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
 		fmt.Println(err)
@@ -35,22 +30,22 @@ func NewScanner(path string) (*ScanWrap, *os.File, error) {
 	}
 
 	scanner := bufio.NewScanner(file)
-	s := &ScanWrap{
-		Scanner: scanner,
+	s := &Scanner{
+		scanner,
 	}
 	return s, file, nil
 }
 
 // CommaStringParse returns a array of strings from a @str
 // splitting them on commas
-func (s *ScanWrap) CommaStringParse() []string {
-	s.Scanner.Scan()
+func (s *Scanner) CommaStringParse() []string {
+	s.Scan()
 	return strings.Split(s.Scanner.Text(), ",")
 }
 
 // CommaStringParseInt returns a array of integers from a @str
 // splitting them on commas
-func (s *ScanWrap) CommaStringParseInt() []int64 {
+func (s *Scanner) CommaStringParseInt() []int64 {
 	strs := s.CommaStringParse()
 	var ints []int64
 	for _, val := range strs {
