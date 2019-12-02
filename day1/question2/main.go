@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-
 	scanner, err := fileparse.NewScanner("day1/input.txt")
 
 	if err != nil {
@@ -20,15 +19,17 @@ func main() {
 	var sum float64
 	for scanner.Scan() {
 		val, err := strconv.ParseFloat(scanner.Text(), 10)
-
-		fmt.Println(val)
-		val = math.Floor(val/3) - 2
-		if err != nil {
-			fmt.Println(err)
-			continue
+		for val > 0 {
+			val = math.Floor(val/3) - 2
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			if val > 0 {
+				fmt.Println(val)
+				sum = sum + val
+			}
 		}
-		fmt.Println(val)
-		sum = sum + val
 	}
 	fmt.Printf("%.0f\n", sum)
 }
