@@ -13,27 +13,29 @@ import (
 // it throught ScannerInterface
 type Scanner struct {
 	*bufio.Scanner
+	file *os.File
 }
 
 // NewScanner reads the input var @path and returns a bufio scanner
-func NewScanner(path string) (*Scanner, *os.File, error) {
+func NewScanner(path string) (*Scanner, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
 		fmt.Println(err)
-		return nil, nil, err
+		return nil, err
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Println(err)
-		return nil, nil, err
+		return nil, err
 	}
 
 	scanner := bufio.NewScanner(file)
 	s := &Scanner{
 		scanner,
+		file,
 	}
-	return s, file, nil
+	return s, nil
 }
 
 // CommaStringParse returns a array of strings from a @str
@@ -57,4 +59,9 @@ func (s *Scanner) CommaStringParseInt() []int64 {
 		ints = append(ints, valInt)
 	}
 	return ints
+}
+
+// Close closes the file attached to the scanner
+func (s *Scanner) Close() {
+	s.file.Close()
 }

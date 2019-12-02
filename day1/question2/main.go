@@ -9,12 +9,12 @@ import (
 )
 
 func main() {
-	scanner, file, err := fileparse.NewScanner("day1/input.txt")
+	scanner, err := fileparse.NewScanner("day1/input.txt")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer file.Close()
+	defer scanner.Close()
 
 	var sum float64
 	for scanner.Scan() {
