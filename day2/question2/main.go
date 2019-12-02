@@ -13,9 +13,12 @@ func main() {
 		return
 	}
 	defer file.Close()
+
 	vals := scanner.CommaStringParseInt()
-	vals[1] = 12
-	vals[2] = 2
+	// 19690720
+	vals[1] = 38
+	vals[2] = 92
+
 	for idx, val := range vals {
 		if (idx+1)%4 != 0 {
 			continue

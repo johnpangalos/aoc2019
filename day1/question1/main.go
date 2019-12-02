@@ -17,8 +17,8 @@ func main() {
 	defer file.Close()
 
 	var sum float64
-	for scanner.Scan() {
-		val, err := strconv.ParseFloat(scanner.Text(), 10)
+	for scanner.Scanner.Scan() {
+		val, err := strconv.ParseFloat(scanner.Scanner.Text(), 10)
 
 		val = math.Floor(val/3) - 2
 		if err != nil {
