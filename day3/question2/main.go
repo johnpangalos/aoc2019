@@ -9,8 +9,8 @@ import (
 )
 
 type point struct {
-	x, y         int64
-	wire1, wire2 bool
+	x, y, count1, count2 int64
+	wire1, wire2         bool
 }
 
 func main() {
@@ -26,18 +26,20 @@ func main() {
 	m := map[string]point{"x0y0": point{x: 0, y: 0, wire1: false, wire2: false}}
 
 	curr := "x0y0"
+	count := int64(0)
 	for _, op := range first {
-		curr = logic(op, m, curr, 1)
+		curr, count = logic(op, m, curr, 1, count)
 	}
 
 	curr = "x0y0"
+	count = int64(0)
 	for _, op := range second {
-		curr = logic(op, m, curr, 2)
+		curr, count = logic(op, m, curr, 2, count)
 	}
 	min := int64(10000000000)
 
 	for _, val := range m {
-		num := abs(val.x) + abs(val.y)
+		num := val.count1 + val.count2
 		if val.wire1 && val.wire2 && (min > num) {
 			min = num
 		}
@@ -58,7 +60,7 @@ func createKey(x int64, y int64) string {
 	}, "")
 }
 
-func logic(op string, m map[string]point, curr string, idx int64) string {
+func logic(op string, m map[string]point, curr string, idx int64, count int64) (string, int64) {
 	opArr := strings.SplitN(op, "", 2)
 
 	val, err := strconv.ParseInt(opArr[1], 10, 64)
@@ -70,6 +72,8 @@ func logic(op string, m map[string]point, curr string, idx int64) string {
 
 	for i := int64(0); i < val; i++ {
 		var xval, yval int64
+		count1 := m[key].count1
+		count2 := m[key].count2
 		switch opArr[0] {
 		case "R":
 			xval = m[key].x + int64(1)
@@ -90,6 +94,12 @@ func logic(op string, m map[string]point, curr string, idx int64) string {
 		}
 		wire1 := idx == int64(1)
 		wire2 := idx == int64(2)
+		if idx == int64(1) {
+			count1++
+		}
+		if idx == int64(2) {
+			count2++
+		}
 		if val, ok := m[key]; ok {
 			if idx == int64(1) {
 				wire1 = true
@@ -98,9 +108,10 @@ func logic(op string, m map[string]point, curr string, idx int64) string {
 			if idx == int64(2) {
 				wire1 = val.wire1
 				wire2 = true
+				count1 = val.count1
 			}
 		}
-		m[key] = point{x: xval, y: yval, wire1: wire1, wire2: wire2}
+		m[key] = point{x: xval, y: yval, wire1: wire1, wire2: wire2, count1: count1, count2: count2}
 	}
-	return key
+	return key, val
 }
