@@ -15,6 +15,7 @@ type requirements struct {
 
 func main() {
 	passwordMap := map[string]requirements{}
+
 	for i := min; i <= max; i++ {
 		password := strconv.Itoa(i)
 		digitArr := strings.Split(password, "")
@@ -23,17 +24,8 @@ func main() {
 			double:     false,
 			increasing: true,
 		}
-		digitMap := map[int]int{
-			1: 0,
-			2: 0,
-			3: 0,
-			4: 0,
-			5: 0,
-			6: 0,
-			7: 0,
-			8: 0,
-			9: 0,
-		}
+		digitMap := baseMap()
+
 		for idx, digit := range digitArr {
 			digit, err := strconv.Atoi(digit)
 			if err != nil {
@@ -41,9 +33,11 @@ func main() {
 				continue
 			}
 			digitMap[digit]++
+
 			if idx == 0 {
 				continue
 			}
+
 			prev, err := strconv.Atoi(digitArr[idx-1])
 			if err != nil {
 				fmt.Println(err)
@@ -70,6 +64,20 @@ func main() {
 			count++
 		}
 	}
-	fmt.Println(passwordMap["556666"])
 	fmt.Println(count)
+}
+
+func baseMap() map[int]int {
+	return map[int]int{
+		1: 0,
+		2: 0,
+		3: 0,
+		4: 0,
+		5: 0,
+		6: 0,
+		7: 0,
+		8: 0,
+		9: 0,
+	}
+
 }
