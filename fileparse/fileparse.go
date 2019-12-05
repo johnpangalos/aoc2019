@@ -47,11 +47,11 @@ func (s *Scanner) CommaStringParse() []string {
 
 // CommaStringParseInt returns a array of integers from a @str
 // splitting them on commas
-func (s *Scanner) CommaStringParseInt() []int64 {
+func (s *Scanner) CommaStringParseInt() []int {
 	strs := s.CommaStringParse()
-	var ints []int64
+	var ints []int
 	for _, val := range strs {
-		valInt, err := strconv.ParseInt(val, 10, 64)
+		valInt, err := strconv.Atoi(val)
 		if err != nil {
 			fmt.Println(err)
 			continue

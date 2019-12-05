@@ -33,7 +33,7 @@ func main() {
 	fmt.Println(vals[0])
 }
 
-func calc(vals []int64, op int64, mem1 int64, mem2 int64, mem3 int64) {
+func calc(vals []int, op int, mem1 int, mem2 int, mem3 int) {
 	switch op {
 	case 1:
 		vals[mem3] = vals[mem1] + vals[mem2]
