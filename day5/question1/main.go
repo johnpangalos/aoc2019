@@ -59,6 +59,7 @@ func main() {
 
 func parseOpCode(op int) code {
 	strconv.Itoa(op)
+
 	return code{}
 }
 
