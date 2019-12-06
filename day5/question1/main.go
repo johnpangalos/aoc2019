@@ -46,54 +46,60 @@ func main() {
 			fmt.Println("next op:", nextOp, "idx:", idx)
 			fmt.Println("Error: next operation index is less than current index")
 		}
+
 		if op == halt || nextOp < idx {
 			break
 		}
+
 		if idx != nextOp {
 			continue
 		}
 
 		longCode := false
 		c := code{}
+
 		if op > 4 {
 			c = parseOpCode(op)
 			op = c.op
 			longCode = true
 		}
+
 		nextOp = nextOp + opLengthMap[op]
 
 		switch op {
 		case add:
+			var p1, p2 int
 			if longCode {
-				p1, p2, p3 := getParams(vals, c, idx)
-				addFunc(vals, p1, p2, p3)
+				p1, p2 = getValParams(vals, c, idx)
 			} else {
-				addFunc(vals, vals[vals[idx+1]], vals[vals[idx+2]], vals[idx+3])
+				p1, p2 = vals[vals[idx+1]], vals[vals[idx+2]]
 			}
+			addFunc(vals, p1, p2, vals[idx+3])
 		case mult:
+			var p1, p2 int
 			if longCode {
-				p1, p2, p3 := getParams(vals, c, idx)
-				multFunc(vals, p1, p2, p3)
+				p1, p2 = getValParams(vals, c, idx)
 			} else {
-				multFunc(vals, vals[vals[idx+1]], vals[vals[idx+2]], vals[idx+3])
+				p1, p2 = vals[vals[idx+1]], vals[vals[idx+2]]
 			}
+			multFunc(vals, p1, p2, vals[idx+3])
 		case saveAddr:
+			var p1 int
 			if longCode {
-				p1, _, _ := getParams(vals, c, idx)
-				saveToRegister(vals, p1)
+				p1, _ = getValParams(vals, c, idx)
 			} else {
-				saveToRegister(vals, vals[idx+1])
+				p1 = vals[idx+1]
 			}
+			saveToRegister(vals, p1)
 		case display:
+			var p1 int
 			if longCode {
-				p1, _, _ := getParams(vals, c, idx)
-				printRegister(vals, p1)
-				saveToRegister(vals, p1)
+				p1, _ = getValParams(vals, c, idx)
 			} else {
-				printRegister(vals, vals[idx+1])
+				p1 = vals[idx+1]
 			}
+			printRegister(vals, p1)
 		}
-
 	}
 }
 
@@ -142,22 +148,22 @@ func printRegister(a []int, pos int) {
 	fmt.Println(a[pos])
 }
 
-func getParams(arr []int, c code, idx int) (int, int, int) {
-	var p1, p2, p3 int
-	if c.firstMode == positionMode {
-		p1 = arr[arr[idx+1]]
-	} else {
-		p1 = arr[idx+1]
+func getValParams(arr []int, c code, idx int) (int, int) {
+	p1 := getValParam(arr, c.firstMode, idx+1)
+	if c.op == saveAddr || c.op == display {
+		return p1, 0
 	}
-	if c.secondMode == positionMode {
-		p1 = arr[arr[idx+2]]
+	p2 := getValParam(arr, c.secondMode, idx+2)
+	return p1, p2
+}
+
+func getValParam(arr []int, mode int, idx int) int {
+	var param int
+
+	if mode == positionMode {
+		param = arr[arr[idx]]
 	} else {
-		p1 = arr[idx+2]
+		param = arr[idx]
 	}
-	if c.thirdMode == positionMode {
-		p1 = arr[arr[idx+3]]
-	} else {
-		p1 = arr[idx+3]
-	}
-	return p1, p2, p3
+	return param
 }
