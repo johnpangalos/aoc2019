@@ -44,21 +44,21 @@ func main() {
 	opLengthMap := getOpLengthMap()
 
 	nextOp := 0
+	fmt.Println("length:", len(vals))
 	for idx, op := range vals {
 		if nextOp < idx {
 			fmt.Println("next op:", nextOp, "idx:", idx)
 			fmt.Println("Error: next operation index is less than current index")
 			break
 		}
-		fmt.Println("idx:", idx, "op:", op)
-
-		if op == halt && nextOp == op {
-			fmt.Println("halt index:", idx)
-			break
-		}
 
 		if idx != nextOp {
 			continue
+		}
+
+		if op == halt {
+			fmt.Println("halt index:", idx)
+			break
 		}
 
 		longCode := false
@@ -74,7 +74,6 @@ func main() {
 
 		switch op {
 		case add:
-			fmt.Println("add")
 			if longCode {
 				p1, p2 := getParams(vals, c, idx)
 				addFunc(vals, p1, p2, vals[idx+3])
@@ -82,7 +81,6 @@ func main() {
 				addFunc(vals, vals[vals[idx+1]], vals[vals[idx+2]], vals[idx+3])
 			}
 		case mult:
-			fmt.Println("mult")
 			if longCode {
 				p1, p2 := getParams(vals, c, idx)
 				multFunc(vals, p1, p2, vals[idx+3])
@@ -90,7 +88,6 @@ func main() {
 				multFunc(vals, vals[vals[idx+1]], vals[vals[idx+2]], vals[idx+3])
 			}
 		case saveAddr:
-			fmt.Println("saveAddr")
 			if longCode {
 				p1, _ := getParams(vals, c, idx)
 				saveToRegister(vals, p1, inputVal)
@@ -98,7 +95,6 @@ func main() {
 				saveToRegister(vals, vals[idx+1], inputVal)
 			}
 		case display:
-			fmt.Println("display")
 			if longCode {
 				p1, _ := getParams(vals, c, idx)
 				printRegister(vals, p1)
@@ -106,22 +102,18 @@ func main() {
 				printRegister(vals, vals[idx+1])
 			}
 		case jumpIfTrue:
-			fmt.Println("jumpIfTrue")
 			if longCode {
 				p1, p2 := getParams(vals, c, idx)
-				fmt.Println("params", p1, p2)
 				if p1 > 0 {
 					nextOp = p2
 				}
 			} else {
 				p1, p2 := vals[idx+1], vals[idx+2]
-				fmt.Println("params", p1, p2)
 				if p1 > 0 {
 					nextOp = p2
 				}
 			}
 		case jumpIfFalse:
-			fmt.Println("jumpIfFalse")
 			if longCode {
 				p1, p2 := getParams(vals, c, idx)
 				if p1 == 0 {
@@ -135,7 +127,6 @@ func main() {
 				printRegister(vals, vals[idx+1])
 			}
 		case lessThan:
-			fmt.Println("lessThan")
 			if longCode {
 				p1, p2 := getParams(vals, c, idx)
 				if p1 < p2 {
@@ -152,7 +143,6 @@ func main() {
 				}
 			}
 		case equals:
-			fmt.Println("equals")
 			if longCode {
 				p1, p2 := getParams(vals, c, idx)
 				if p1 == p2 {
