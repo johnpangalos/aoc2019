@@ -44,7 +44,6 @@ func main() {
 	opLengthMap := getOpLengthMap()
 
 	nextOp := 0
-	fmt.Println("length:", len(vals))
 	for idx, op := range vals {
 		if nextOp < idx {
 			fmt.Println("next op:", nextOp, "idx:", idx)
@@ -72,93 +71,53 @@ func main() {
 
 		nextOp = nextOp + opLengthMap[op]
 
+		var p1, p2 int
+
+		if longCode {
+			p1, p2 = getParams(vals, c, idx)
+		} else {
+			if c.op == saveAddr || c.op == display {
+				p1, p2 = vals[idx+1], 0
+			} else {
+				p1, p2 = vals[idx+1], vals[idx+2]
+			}
+		}
+
 		switch op {
 		case add:
-			if longCode {
-				p1, p2 := getParams(vals, c, idx)
-				addFunc(vals, p1, p2, vals[idx+3])
-			} else {
-				addFunc(vals, vals[vals[idx+1]], vals[vals[idx+2]], vals[idx+3])
+			if !longCode {
+				p1, p2 = vals[p1], vals[p2]
 			}
+			addFunc(vals, p1, p2, vals[idx+3])
 		case mult:
-			if longCode {
-				p1, p2 := getParams(vals, c, idx)
-				multFunc(vals, p1, p2, vals[idx+3])
-			} else {
-				multFunc(vals, vals[vals[idx+1]], vals[vals[idx+2]], vals[idx+3])
+			if !longCode {
+				p1, p2 = vals[p1], vals[p2]
 			}
+			multFunc(vals, p1, p2, vals[idx+3])
 		case saveAddr:
-			if longCode {
-				p1, _ := getParams(vals, c, idx)
-				saveToRegister(vals, p1, inputVal)
-			} else {
-				saveToRegister(vals, vals[idx+1], inputVal)
-			}
+			saveToRegister(vals, p1, inputVal)
 		case display:
-			if longCode {
-				p1, _ := getParams(vals, c, idx)
-				printRegister(vals, p1)
-			} else {
-				printRegister(vals, vals[idx+1])
-			}
+			printRegister(vals, p1)
 		case jumpIfTrue:
-			if longCode {
-				p1, p2 := getParams(vals, c, idx)
-				if p1 > 0 {
-					nextOp = p2
-				}
-			} else {
-				p1, p2 := vals[idx+1], vals[idx+2]
-				if p1 > 0 {
-					nextOp = p2
-				}
+			if p1 > 0 {
+				nextOp = p2
 			}
 		case jumpIfFalse:
-			if longCode {
-				p1, p2 := getParams(vals, c, idx)
-				if p1 == 0 {
-					nextOp = p2
-				}
-			} else {
-				p1, p2 := vals[idx+1], vals[idx+2]
-				if p1 == 0 {
-					nextOp = p2
-				}
-				printRegister(vals, vals[idx+1])
+			if p1 == 0 {
+				nextOp = p2
 			}
 		case lessThan:
-			if longCode {
-				p1, p2 := getParams(vals, c, idx)
-				if p1 < p2 {
-					saveToRegister(vals, vals[idx+3], 1)
-				} else {
-					saveToRegister(vals, vals[idx+3], 0)
-				}
+			if p1 < p2 {
+				saveToRegister(vals, vals[idx+3], 1)
 			} else {
-				p1, p2 := vals[idx+1], vals[idx+2]
-				if p1 < p2 {
-					saveToRegister(vals, vals[idx+3], 1)
-				} else {
-					saveToRegister(vals, vals[idx+3], 0)
-				}
+				saveToRegister(vals, vals[idx+3], 0)
 			}
 		case equals:
-			if longCode {
-				p1, p2 := getParams(vals, c, idx)
-				if p1 == p2 {
-					saveToRegister(vals, vals[idx+3], 1)
-				} else {
-					saveToRegister(vals, vals[idx+3], 0)
-				}
+			if p1 == p2 {
+				saveToRegister(vals, vals[idx+3], 1)
 			} else {
-				p1, p2 := vals[idx+1], vals[idx+2]
-				if p1 == p2 {
-					saveToRegister(vals, vals[idx+3], 1)
-				} else {
-					saveToRegister(vals, vals[idx+3], 0)
-				}
+				saveToRegister(vals, vals[idx+3], 0)
 			}
-
 		}
 	}
 }
@@ -231,4 +190,19 @@ func getParam(arr []int, mode int, idx int) int {
 	}
 	return param
 
+}
+
+func getVals(arr []int, c code, longCode bool, idx int) (int, int) {
+	var p1, p2 int
+
+	if longCode {
+		p1, p2 = getParams(arr, c, idx)
+	} else {
+		if c.op == saveAddr || c.op == display {
+			p1, p2 = arr[idx+1], 0
+		} else {
+			p1, p2 = arr[idx+1], arr[idx+2]
+		}
+	}
+	return p1, p2
 }
