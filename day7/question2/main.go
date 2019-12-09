@@ -52,21 +52,20 @@ func main() {
 		}
 
 		fullStop := false
+		count := 0
 		for !fullStop {
-			for idx, s := range sArr {
-				fmt.Println("--------------------------------")
-				fmt.Println("Current index:", idx)
-				fmt.Println("--------------------------------")
-				sInt, err := strconv.Atoi(s)
-				if err != nil {
-					panic(err)
-				}
-				input = amplifier(input, sInt, ampState, idx, fullStop)
+			currAmp := count % 5
+			s := sArr[currAmp]
+			sInt, err := strconv.Atoi(s)
+			if err != nil {
+				panic(err)
 			}
+			input = amplifier(input, sInt, ampState, currAmp, &fullStop)
 
 			if input > max {
 				max = input
 			}
+			count++
 		}
 	}
 	fmt.Println(max)
@@ -85,7 +84,6 @@ func generateThrusterSettings() [][]string {
 		for _, str := range strArr {
 			val, err := strconv.Atoi(str)
 			if err != nil {
-				fmt.Println(err)
 				panic(err)
 			}
 			if val <= 4 {
@@ -112,7 +110,7 @@ func generateThrusterSettings() [][]string {
 }
 
 func parseFile() []int {
-	scanner, err := fileparse.NewScanner("day7/question2/test1.txt")
+	scanner, err := fileparse.NewScanner("day7/input.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -127,17 +125,19 @@ func copySlice(s []int) []int {
 	return out
 }
 
-func amplifier(input, setting int, s []state, currAmp int, fullstop bool) int {
+func amplifier(input, setting int, s []state, currAmp int, fullstop *bool) int {
 	opLengthMap := getOpLengthMap()
 
 	nextOp := s[currAmp].idx
 	output := 0
 	vals := s[currAmp].arr
 
-	for idx, op := range vals {
+	for {
+		op := vals[nextOp]
+		idx := nextOp
 		if op == halt {
 			if currAmp == 4 {
-				fullstop = true
+				*fullstop = true
 			}
 			break
 		}
@@ -167,59 +167,55 @@ func amplifier(input, setting int, s []state, currAmp int, fullstop bool) int {
 
 		switch op {
 		case add:
-			fmt.Println("add")
 			if !longCode {
 				p1, p2 = vals[p1], vals[p2]
 			}
 			addFunc(vals, p1, p2, vals[idx+3])
 		case mult:
-			fmt.Println("mult")
 			if !longCode {
 				p1, p2 = vals[p1], vals[p2]
 			}
 			multFunc(vals, p1, p2, vals[idx+3])
 		case saveAddr:
-			fmt.Println("save")
 			inputVal := input
 			if idx == 0 {
 				inputVal = setting
 			}
 			saveToRegister(vals, p1, inputVal)
 		case display:
-			fmt.Println("display")
 			output = vals[p1]
 			s[currAmp].idx = nextOp
 		case jumpIfTrue:
-			fmt.Println("jumpIfTrue")
 			if p1 > 0 {
 				nextOp = p2
+				s[currAmp].idx = p2
 			}
 		case jumpIfFalse:
-			fmt.Println("jumpIfFalse")
 			if p1 == 0 {
 				nextOp = p2
+				s[currAmp].idx = p2
 			}
 		case lessThan:
-			fmt.Println("lessThan")
 			if p1 < p2 {
 				saveToRegister(vals, vals[idx+3], 1)
 			} else {
 				saveToRegister(vals, vals[idx+3], 0)
 			}
 		case equals:
-			fmt.Println("equals")
 			if p1 == p2 {
 				saveToRegister(vals, vals[idx+3], 1)
 			} else {
 				saveToRegister(vals, vals[idx+3], 0)
 			}
 		}
-
 		if op == display {
 			break
 		}
 	}
 	return output
+}
+
+func runOperation() {
 }
 
 func parseOpCode(op int) code {
