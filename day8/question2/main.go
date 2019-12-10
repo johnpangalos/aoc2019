@@ -18,32 +18,42 @@ func main() {
 	defer s.Close()
 
 	arr := s.PCStringParseInt()
-	type layer map[int]int
-	pic := []layer{}
-	for i, _ := range arr {
+	pic := [][]int{}
+	finalPic := []int{}
+	numLayers := 0
+
+	for i, el := range arr {
 		if i%layerLength == 0 {
-			pic = append(pic, layer{})
+			pic = append(pic, []int{})
+			numLayers++
 		}
 		lIdx := int(math.Floor(float64(i) / layerLength))
-		rowIdx := int(math.Floor(float64(i-lIdx*layerLength) / 25))
-		colIdx := i - rowIdx*25 - lIdx*layerLength
-		l := pic[0]
-		if _, ok := l[rowIdx]; !ok {
-
-		}
-
-		// d := m[lIdx]
-		// d[el]++
+		pic[lIdx] = append(pic[lIdx], el)
 	}
 
-	// min := 99999999999999
-	// layer := 0
-	// for idx, d := range m {
-	// if min > d[0] {
-	// min = d[0]
-	// layer = idx
-	// }
-	// }
-	// fmt.Println(m[layer][1] * m[layer][2])
-	fmt.Println()
+	finalPic = pic[0]
+	for j := 1; j < numLayers; j++ {
+		for i := 0; i < layerLength; i++ {
+			val := finalPic[i]
+			if val == 0 || val == 1 {
+				continue
+			}
+			finalPic[i] = pic[j][i]
+		}
+	}
+
+	fmt.Println(finalPic)
+	for i, el := range finalPic {
+		if i%25 == 0 {
+			fmt.Printf("\n")
+		}
+		if el == 2 {
+			fmt.Printf(" ")
+		} else if el == 1 {
+			fmt.Printf("█")
+		} else {
+			fmt.Printf("░")
+		}
+	}
+
 }
