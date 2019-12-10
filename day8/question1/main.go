@@ -18,14 +18,24 @@ func main() {
 	defer s.Close()
 
 	arr := s.PCStringParseInt()
-
-	// max := 0
-	// layer := 0
+	type digitMap map[int]int
+	m := []digitMap{}
 	for idx, el := range arr {
-		if el == 0 {
-			lIdx := math.Floor(float64(idx) / layerLength)
-
+		if idx%layerLength == 0 {
+			m = append(m, digitMap{})
 		}
+		lIdx := int(math.Floor(float64(idx) / layerLength))
+		d := m[lIdx]
+		d[el]++
 	}
 
+	min := 99999999999999
+	layer := 0
+	for idx, d := range m {
+		if min > d[0] {
+			min = d[0]
+			layer = idx
+		}
+	}
+	fmt.Println(m[layer][1] * m[layer][2])
 }
