@@ -61,6 +61,23 @@ func (s *Scanner) CommaStringParseInt() []int {
 	return ints
 }
 
+// PCStringParseInt returns a array of integers from a @str
+// splitting every character (PC = PernCharacter)
+func (s *Scanner) PCStringParseInt() []int {
+	s.Scan()
+	strs := strings.Split(s.Scanner.Text(), "")
+	var ints []int
+	for _, val := range strs {
+		valInt, err := strconv.Atoi(val)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		ints = append(ints, valInt)
+	}
+	return ints
+}
+
 // Close closes the file attached to the scanner
 func (s *Scanner) Close() {
 	s.file.Close()
