@@ -9,20 +9,22 @@ import (
 )
 
 const (
-	add         = 1
-	mult        = 2
-	saveAddr    = 3
-	display     = 4
-	jumpIfTrue  = 5
-	jumpIfFalse = 6
-	lessThan    = 7
-	equals      = 8
-	halt        = 99
+	add           = 1
+	mult          = 2
+	saveAddr      = 3
+	display       = 4
+	jumpIfTrue    = 5
+	jumpIfFalse   = 6
+	lessThan      = 7
+	equals        = 8
+	adjustRelBase = 9
+	halt          = 99
 
-	inputVal = 5
+	inputVal = 1
 
 	positionMode  = 0
 	immediateMode = 1
+	relativeMode  = 2
 )
 
 type code struct {
@@ -32,8 +34,10 @@ type code struct {
 	thirdMode  int
 }
 
+var relativeBase = 0
+
 func main() {
-	scanner, err := fileparse.NewScanner("day5/input.txt")
+	scanner, err := fileparse.NewScanner("day9/input.txt")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,22 +45,17 @@ func main() {
 	defer scanner.Close()
 
 	vals := scanner.CommaStringParseInt()
+	vals = append(vals, make([]int, 9999999)...)
+	fmt.Println(len(vals))
+
 	opLengthMap := getOpLengthMap()
 
 	nextOp := 0
-	for idx, op := range vals {
-		if nextOp < idx {
-			fmt.Println("next op:", nextOp, "idx:", idx)
-			fmt.Println("Error: next operation index is less than current index")
-			break
-		}
 
-		if idx != nextOp {
-			continue
-		}
-
+	for {
+		op := vals[nextOp]
+		idx := nextOp
 		if op == halt {
-			fmt.Println("halt index:", idx)
 			break
 		}
 
@@ -75,12 +74,10 @@ func main() {
 
 		if longCode {
 			p1, p2 = getParams(vals, c, idx)
+		} else if c.op == saveAddr || c.op == display || c.op == relativeBase {
+			p1, p2 = vals[idx+1], 0
 		} else {
-			if c.op == saveAddr || c.op == display {
-				p1, p2 = vals[idx+1], 0
-			} else {
-				p1, p2 = vals[idx+1], vals[idx+2]
-			}
+			p1, p2 = vals[idx+1], vals[idx+2]
 		}
 		performOp(op, idx, p1, p2, &nextOp, vals, longCode)
 	}
@@ -89,40 +86,52 @@ func main() {
 func performOp(op, idx, p1, p2 int, nextOp *int, vals []int, longCode bool) {
 	switch op {
 	case add:
+		fmt.Println("add")
 		if !longCode {
 			p1, p2 = vals[p1], vals[p2]
 		}
 		addFunc(vals, p1, p2, vals[idx+3])
 	case mult:
+		fmt.Println("mult")
 		if !longCode {
 			p1, p2 = vals[p1], vals[p2]
 		}
 		multFunc(vals, p1, p2, vals[idx+3])
 	case saveAddr:
+		fmt.Println("saveAddr")
 		saveToRegister(vals, p1, inputVal)
 	case display:
+		fmt.Println("display")
 		printRegister(vals, p1)
 	case jumpIfTrue:
+		fmt.Println("jumpIfTrue")
 		if p1 > 0 {
 			*nextOp = p2
 		}
 	case jumpIfFalse:
+		fmt.Println("jumpIfFalse")
 		if p1 == 0 {
 			*nextOp = p2
 		}
 	case lessThan:
+		fmt.Println("lessThan")
 		if p1 < p2 {
 			saveToRegister(vals, vals[idx+3], 1)
 		} else {
 			saveToRegister(vals, vals[idx+3], 0)
 		}
 	case equals:
+		fmt.Println("equals")
 		if p1 == p2 {
 			saveToRegister(vals, vals[idx+3], 1)
 		} else {
 			saveToRegister(vals, vals[idx+3], 0)
 		}
+	case adjustRelBase:
+		fmt.Println("adjustRelBase")
+		relativeBase = relativeBase + p1
 	}
+
 }
 
 func parseOpCode(op int) code {
@@ -147,14 +156,15 @@ func parseOpCode(op int) code {
 
 func getOpLengthMap() map[int]int {
 	return map[int]int{
-		1: 4,
-		2: 4,
-		3: 2,
-		4: 2,
-		5: 3,
-		6: 3,
-		7: 4,
-		8: 4,
+		add:           4,
+		mult:          4,
+		saveAddr:      2,
+		display:       2,
+		jumpIfTrue:    3,
+		jumpIfFalse:   3,
+		lessThan:      4,
+		equals:        4,
+		adjustRelBase: 2,
 	}
 }
 
@@ -188,6 +198,8 @@ func getParam(arr []int, mode int, idx int) int {
 
 	if mode == positionMode {
 		param = arr[arr[idx]]
+	} else if mode == relativeMode {
+		param = relativeBase + arr[idx]
 	} else {
 		param = arr[idx]
 	}
@@ -200,12 +212,10 @@ func getVals(arr []int, c code, longCode bool, idx int) (int, int) {
 
 	if longCode {
 		p1, p2 = getParams(arr, c, idx)
+	} else if c.op == saveAddr || c.op == display {
+		p1, p2 = arr[idx+1], 0
 	} else {
-		if c.op == saveAddr || c.op == display {
-			p1, p2 = arr[idx+1], 0
-		} else {
-			p1, p2 = arr[idx+1], arr[idx+2]
-		}
+		p1, p2 = arr[idx+1], arr[idx+2]
 	}
 	return p1, p2
 }
