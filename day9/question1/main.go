@@ -46,7 +46,6 @@ func main() {
 
 	vals := scanner.CommaStringParseInt()
 	vals = append(vals, make([]int, 9999999)...)
-	fmt.Println(len(vals))
 
 	opLengthMap := getOpLengthMap()
 
@@ -59,79 +58,56 @@ func main() {
 			break
 		}
 
-		longCode := false
-		c := code{}
-
+		c := code{
+			op: op,
+		}
 		if op > 4 {
 			c = parseOpCode(op)
-			op = c.op
-			longCode = true
 		}
+		fmt.Println(op, c)
 
 		nextOp = nextOp + opLengthMap[op]
 
-		var p1, p2 int
-
-		if longCode {
-			p1, p2 = getParams(vals, c, idx)
-		} else if c.op == saveAddr || c.op == display || c.op == relativeBase {
-			p1, p2 = vals[idx+1], 0
-		} else {
-			p1, p2 = vals[idx+1], vals[idx+2]
-		}
-		performOp(op, idx, p1, p2, &nextOp, vals, longCode)
+		performOp(idx, &nextOp, vals, c)
 	}
 }
 
-func performOp(op, idx, p1, p2 int, nextOp *int, vals []int, longCode bool) {
-	switch op {
+func performOp(idx int, nextOp *int, vals []int, c code) {
+	p1, p2, p3 := getParams(vals, c, idx)
+	// fmt.Println("index:", idx, "\top:", opToString(op), "\tparam 1:", p1, "\tparam 2:", p2, "\tparam 3:", p3)
+	switch c.op {
 	case add:
-		fmt.Println("add")
-		if !longCode {
-			p1, p2 = vals[p1], vals[p2]
-		}
-		addFunc(vals, p1, p2, vals[idx+3])
+		addFunc(vals, p1, p2, p3)
 	case mult:
-		fmt.Println("mult")
-		if !longCode {
-			p1, p2 = vals[p1], vals[p2]
-		}
-		multFunc(vals, p1, p2, vals[idx+3])
+		multFunc(vals, p1, p2, p3)
 	case saveAddr:
-		fmt.Println("saveAddr")
 		saveToRegister(vals, p1, inputVal)
 	case display:
-		fmt.Println("display")
 		printRegister(vals, p1)
 	case jumpIfTrue:
-		fmt.Println("jumpIfTrue")
 		if p1 > 0 {
 			*nextOp = p2
 		}
 	case jumpIfFalse:
-		fmt.Println("jumpIfFalse")
 		if p1 == 0 {
 			*nextOp = p2
 		}
 	case lessThan:
-		fmt.Println("lessThan")
 		if p1 < p2 {
-			saveToRegister(vals, vals[idx+3], 1)
+			saveToRegister(vals, p3, 1)
 		} else {
-			saveToRegister(vals, vals[idx+3], 0)
+			saveToRegister(vals, p3, 0)
 		}
 	case equals:
-		fmt.Println("equals")
 		if p1 == p2 {
-			saveToRegister(vals, vals[idx+3], 1)
+			saveToRegister(vals, p3, 1)
 		} else {
-			saveToRegister(vals, vals[idx+3], 0)
+			saveToRegister(vals, p3, 0)
 		}
 	case adjustRelBase:
-		fmt.Println("adjustRelBase")
 		relativeBase = relativeBase + p1
+		fmt.Println(relativeBase)
 	}
-
 }
 
 func parseOpCode(op int) code {
@@ -184,38 +160,56 @@ func printRegister(a []int, pos int) {
 	fmt.Println(a[pos])
 }
 
-func getParams(arr []int, c code, idx int) (int, int) {
-	p1 := getParam(arr, c.firstMode, idx+1)
-	if c.op == saveAddr || c.op == display {
-		return p1, 0
+func getParams(arr []int, c code, idx int) (p1, p2, p3 int) {
+	switch c.op {
+	case add, mult, lessThan, equals:
+		p1 = getParam(arr, c.firstMode, idx+1)
+		p2 = getParam(arr, c.secondMode, idx+2)
+		p3 = getParam(arr, 1, idx+3)
+	case saveAddr:
+		p1 = getParam(arr, 1, idx+1)
+		if c.firstMode == relativeMode {
+			p1 += relativeBase
+		}
+	case jumpIfFalse, jumpIfTrue:
+		p1 = getParam(arr, c.firstMode, idx+1)
+		p2 = getParam(arr, c.secondMode, idx+2)
+	case display, adjustRelBase:
+		p1 = getParam(arr, c.firstMode, idx+1)
 	}
-	p2 := getParam(arr, c.secondMode, idx+2)
-	return p1, p2
+	return
 }
 
 func getParam(arr []int, mode int, idx int) int {
-	var param int
-
 	if mode == positionMode {
-		param = arr[arr[idx]]
+		return arr[arr[idx]]
 	} else if mode == relativeMode {
-		param = relativeBase + arr[idx]
-	} else {
-		param = arr[idx]
+		return relativeBase + arr[idx]
 	}
-	return param
+	return arr[idx]
 
 }
 
-func getVals(arr []int, c code, longCode bool, idx int) (int, int) {
-	var p1, p2 int
+// func getVals(arr []int, c code, longCode bool, idx int) (int, int) {
+// if longCode {
+// return getParams(arr, c, idx)
+// } else if c.op == saveAddr || c.op == display {
+// return arr[idx+1], 0
+// }
+// return arr[idx+1], arr[idx+2]
+// }
 
-	if longCode {
-		p1, p2 = getParams(arr, c, idx)
-	} else if c.op == saveAddr || c.op == display {
-		p1, p2 = arr[idx+1], 0
-	} else {
-		p1, p2 = arr[idx+1], arr[idx+2]
+func opToString(op int) string {
+	opStringMap := map[int]string{
+		add:           "add",
+		mult:          "mult",
+		saveAddr:      "saveAddr",
+		display:       "display",
+		jumpIfTrue:    "jumpIfTrue",
+		jumpIfFalse:   "jumpIfFalse",
+		lessThan:      "lessThan",
+		equals:        "equals",
+		adjustRelBase: "adjustRel",
 	}
-	return p1, p2
+	return opStringMap[op]
 }
