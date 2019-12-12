@@ -20,7 +20,7 @@ const (
 	adjustRelBase = 9
 	halt          = 99
 
-	inputVal = 1
+	inputVal = 2
 
 	positionMode  = 0
 	immediateMode = 1
