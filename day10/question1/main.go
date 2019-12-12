@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/johnny88/aoc2019/fileparse"
@@ -12,19 +13,17 @@ const (
 	empty    = "."
 )
 
-type coordinate struct {
+type coord struct {
 	x, y int
 }
 
 type lineOfSight struct {
-	x, y int
+	ratios []float64
 }
 
-type size struct {
-	width, height int
-}
-
-type asteroidMap [][]string
+// type size struct {
+// width, height int
+// }
 
 func main() {
 	scanner, err := fileparse.NewScanner("day10/test.txt")
@@ -34,26 +33,52 @@ func main() {
 	}
 	defer scanner.Close()
 
-	var m asteroidMap
+	m := map[coord]string{}
+	coords := []coord{}
+	rowCount := 0
 	for scanner.Scan() {
 		row := strings.Split(scanner.Text(), "")
-		m = append(m, row)
+		for idx, val := range row {
+			c := coord{rowCount, idx}
+			coords = append(coords, c)
+			m[c] = val
+		}
+		rowCount++
 	}
-	s := asteroidMapSize(m)
-	fmt.Println(m, s.toString())
-}
-
-func lineOfSightArray(point coordinate) []lineOfSight {
-	return []lineOfSight{}
-}
-
-func asteroidMapSize(m asteroidMap) size {
-	return size{
-		width:  len(m[0]),
-		height: len(m),
+	ls := map[coord]lineOfSight{}
+	for k, v := range m {
+		if v == "." {
+			continue
+		}
+		for _, c := range coords {
+			if _, ok := ls[k]; ok {
+				ls[k] = lineOfSight{
+					ratios: []float64{ratio(k, c)},
+				}
+			}
+		}
 	}
+	fmt.Println(ls)
+	// s := asteroidMapSize(m)
+
 }
 
-func (s *size) toString() string {
-	return fmt.Sprintf("width: %d, height: %d", s.width, s.height)
+func ratio(p1, p2 coord) float64 {
+	x := p1.x - p2.x
+	y := p1.y - p2.y
+	if y == 0 {
+		return math.Inf(x)
+	}
+	return float64(x) / float64(y)
 }
+
+// func asteroidMapSize(m asteroidMap) size {
+// return size{
+// width:  len(m[0]),
+// height: len(m),
+// }
+// }
+
+// func (s *size) toString() string {
+// return fmt.Sprintf("width: %d, height: %d", s.width, s.height)
+// }
