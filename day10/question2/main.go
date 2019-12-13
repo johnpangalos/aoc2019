@@ -8,18 +8,20 @@ import (
 	"github.com/johnny88/aoc2019/fileparse"
 )
 
+type 
 const (
 	asteroid = "#"
 	empty    = "."
 
-	left      = 0
-	right     = 1
-	up        = 2
-	down      = 3
-	downLeft  = 4
-	downRight = 5
-	upLeft    = 6
-	upRight   = 7
+	left      = "left"
+	right     = "right"
+	up        = "up"
+	down      = "down"
+	downLeft  = "downLeft"
+	downRight = "downRight"
+	upLeft    = "upLeft"
+	upRight   = "upRight"
+
 )
 
 type coord struct {
@@ -31,14 +33,22 @@ type lineOfSight struct {
 }
 
 type vector struct {
-	distance, direction int
-	ratio               float64
+	distance  int
+	direction string
+	ratio     float64
+	coord     coord
 }
 
-type quadrantRatios map[int][]float64
-type quadrantRatiosMap map[coord]quadrantRatios
+type orderItem struct {
+	ratio     float64
+	direction string
+}
 
-type lineOfSightMap map[coord]lineOfSight
+type quadrantRatios map[string][]float64
+type order []orderItem
+
+type vectorArr []vector
+type vectorMap map[float64]vectorArr
 
 func main() {
 	scanner, err := fileparse.NewScanner("day10/test1.txt")
@@ -48,10 +58,17 @@ func main() {
 	}
 	defer scanner.Close()
 
+	clockwise = []string{
+		up, upRight, right, downRight, down, downLeft, left, upLeft
+	}
+
 	m := map[coord]string{}
 	coords := []coord{}
 	rowCount := 0
-	c := coord{x: 3, y: 4}
+
+	// Use answer from part one
+	laser := coord{x: 3, y: 4}
+
 	for scanner.Scan() {
 		row := strings.Split(scanner.Text(), "")
 		for idx, val := range row {
@@ -62,36 +79,29 @@ func main() {
 		rowCount++
 	}
 
-	ls := make(lineOfSightMap)
-	qrm := make(quadrantRatiosMap)
+	qr := make(quadrantRatios)
+	vm := make(vectorMap)
 
-	for k, v := range m {
-		if v == "." {
+	for _, c := range coords {
+		if m[c] == "." || laser == c {
 			continue
 		}
-
-		qr := make(quadrantRatios)
-		for _, c := range coords {
-			if m[c] == "." || k == c {
-				continue
-			}
-			r := ratio(k, c)
-			d := dir(k, c)
-			vec := vector{
-				ratio:     r,
-				direction: d,
-				distance:  dist(k, c),
-			}
-
-			ls.addVector(k, vec)
-			qr.addRatio(r, d)
+		r := ratio(laser, c)
+		d := dir(laser, c)
+		vec := vector{
+			ratio:     r,
+			direction: d,
+			distance:  dist(laser, c),
+			coord:     c,
 		}
-		qrm[k] = qr
+
+		vm.addVector(r, vec)
+		qr.addRatio(r, d)
 	}
-	fmt.Println(qrm.toString())
+	fmt.Println(qr.toString())
 }
 
-func (q quadrantRatios) addRatio(r float64, d int) {
+func (q quadrantRatios) addRatio(r float64, d string) {
 	if _, ok := q[d]; !ok {
 		q[d] = []float64{}
 	}
@@ -107,24 +117,14 @@ func (q quadrantRatios) addRatio(r float64, d int) {
 	q[d] = rs
 }
 
-func (qrm quadrantRatiosMap) toString() string {
-	var s []string
-	for k, v := range qrm {
-		s = append(s, fmt.Sprintf("%d: %v", k, v))
-	}
-	return strings.Join(s, "\n")
-}
-
-func (ls lineOfSightMap) addVector(c coord, v vector) {
-	if _, oc := ls[c]; !oc {
-		ls[c] = lineOfSight{
-			vectors: []vector{v},
-		}
+func (vm vectorMap) addVector(c float64, v vector) {
+	if _, oc := vm[c]; !oc {
+		vm[c] = []vector{}
 	}
 
-	l := ls[c]
-	l.vectors = append(l.vectors, v)
-	ls[c] = l
+	vs := vm[c]
+	vs = append(vs, v)
+	vm[c] = vs
 }
 
 func ratio(p1, p2 coord) float64 {
@@ -137,12 +137,12 @@ func ratio(p1, p2 coord) float64 {
 }
 
 func dist(p1, p2 coord) int {
-	x := p1.x - p2.x
-	y := p1.y - p2.y
-	return x + y
+	x := math.Abs(float64(p1.x) - float64(p2.x))
+	y := math.Abs(float64(p1.y) - float64(p2.y))
+	return int(x + y)
 }
 
-func dir(p1, p2 coord) int {
+func dir(p1, p2 coord) string {
 	x := p1.x - p2.x
 	y := p1.y - p2.y
 	if x == 0 && y < 0 {
@@ -169,9 +169,46 @@ func dir(p1, p2 coord) int {
 	if x < 0 && y > 0 {
 		return upRight
 	}
-	return -1
+	return ""
 }
 
 func (c *coord) toString() string {
 	return fmt.Sprintf("%d,%d", c.x, c.y)
+}
+
+func (vm vectorMap) toString() string {
+	var s []string
+	for k, v := range vm {
+		s = append(s, fmt.Sprintf("%f: %v", k, v.toString()))
+	}
+	return strings.Join(s, "\n")
+}
+
+func (q quadrantRatios) toString() string {
+	var s []string
+	for k, v := range q {
+		s = append(s, fmt.Sprintf("%s: %f", k, v))
+	}
+	return strings.Join(s, "\n")
+}
+
+func (v *vector) toString() string {
+	return fmt.Sprintf(
+		"direction: %s, ratio: %f, distance: %d, coord: %d,%d",
+		v.direction,
+		v.ratio,
+		v.distance,
+		v.coord.x,
+		v.coord.y,
+	)
+}
+
+func (vs vectorArr) toString() string {
+	s := []string{"["}
+	for _, v := range vs {
+		s = append(s, fmt.Sprintf("  %s", v.toString()))
+	}
+	s = append(s, "]")
+	return strings.Join(s, "\n")
+
 }
