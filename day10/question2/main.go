@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 
 	"github.com/johnny88/aoc2019/fileparse"
 )
 
-type 
 const (
 	asteroid = "#"
 	empty    = "."
@@ -21,7 +21,6 @@ const (
 	downRight = "downRight"
 	upLeft    = "upLeft"
 	upRight   = "upRight"
-
 )
 
 type coord struct {
@@ -51,15 +50,15 @@ type vectorArr []vector
 type vectorMap map[float64]vectorArr
 
 func main() {
-	scanner, err := fileparse.NewScanner("day10/test1.txt")
+	scanner, err := fileparse.NewScanner("day10/input.txt")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer scanner.Close()
 
-	clockwise = []string{
-		up, upRight, right, downRight, down, downLeft, left, upLeft
+	clockwise := []string{
+		up, upRight, right, downRight, down, downLeft, left, upLeft,
 	}
 
 	m := map[coord]string{}
@@ -67,12 +66,16 @@ func main() {
 	rowCount := 0
 
 	// Use answer from part one
-	laser := coord{x: 3, y: 4}
+	laser := coord{x: 37, y: 25}
 
+	numAsteroids := 0
 	for scanner.Scan() {
 		row := strings.Split(scanner.Text(), "")
 		for idx, val := range row {
 			c := coord{idx, rowCount}
+			if val == "#" && c != laser {
+				numAsteroids++
+			}
 			coords = append(coords, c)
 			m[c] = val
 		}
@@ -98,7 +101,44 @@ func main() {
 		vm.addVector(r, vec)
 		qr.addRatio(r, d)
 	}
-	fmt.Println(qr.toString())
+
+	for k, rs := range qr {
+		switch k {
+		case upRight, downRight, downLeft, upLeft:
+			sort.Sort(sort.Reverse(sort.Float64Slice(rs)))
+		}
+	}
+
+	destroyOrder := []coord{}
+	for len(destroyOrder) < numAsteroids {
+		for _, currDir := range clockwise {
+			for _, r := range qr[currDir] {
+				var vs []vector
+				if len(vm[r]) == 0 {
+					continue
+				}
+
+				for _, v := range vm[r] {
+					if v.direction == currDir {
+						vs = append(vs, v)
+					}
+				}
+
+				min := 9999999999999
+				var minVec vector
+				for _, v := range vs {
+					if v.distance < min {
+						min = v.distance
+						minVec = v
+					}
+				}
+
+				destroyOrder = append(destroyOrder, minVec.coord)
+				vm[r] = remove(vm[r], minVec)
+			}
+		}
+	}
+	fmt.Println(destroyOrder[199].x*100 + destroyOrder[199].y)
 }
 
 func (q quadrantRatios) addRatio(r float64, d string) {
@@ -184,6 +224,14 @@ func (vm vectorMap) toString() string {
 	return strings.Join(s, "\n")
 }
 
+func (vm vectorMap) length() int {
+	counter := 0
+	for _, v := range vm {
+		counter += len(v)
+	}
+	return counter
+}
+
 func (q quadrantRatios) toString() string {
 	var s []string
 	for k, v := range q {
@@ -211,4 +259,30 @@ func (vs vectorArr) toString() string {
 	s = append(s, "]")
 	return strings.Join(s, "\n")
 
+}
+
+func remove(s []vector, v vector) []vector {
+	i := 0
+	for idx, vec := range s {
+		if vec == v {
+			i = idx
+			break
+		}
+	}
+
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
+}
+
+func removeCoord(s []coord, c coord) []coord {
+	i := 0
+	for idx, co := range s {
+		if c == co {
+			i = idx
+			break
+		}
+	}
+
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
 }
