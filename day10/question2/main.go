@@ -31,12 +31,17 @@ type lineOfSight struct {
 }
 
 type vector struct {
-	ratio     float64
-	direction int
+	distance, direction int
+	ratio               float64
 }
 
+type quadrantRatios map[int][]float64
+type quadrantRatiosMap map[coord]quadrantRatios
+
+type lineOfSightMap map[coord]lineOfSight
+
 func main() {
-	scanner, err := fileparse.NewScanner("day10/input.txt")
+	scanner, err := fileparse.NewScanner("day10/test1.txt")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -46,7 +51,7 @@ func main() {
 	m := map[coord]string{}
 	coords := []coord{}
 	rowCount := 0
-
+	c := coord{x: 3, y: 4}
 	for scanner.Scan() {
 		row := strings.Split(scanner.Text(), "")
 		for idx, val := range row {
@@ -57,52 +62,69 @@ func main() {
 		rowCount++
 	}
 
-	ls := map[coord]lineOfSight{}
+	ls := make(lineOfSightMap)
+	qrm := make(quadrantRatiosMap)
 
 	for k, v := range m {
 		if v == "." {
 			continue
 		}
+
+		qr := make(quadrantRatios)
 		for _, c := range coords {
 			if m[c] == "." || k == c {
 				continue
 			}
+			r := ratio(k, c)
+			d := dir(k, c)
 			vec := vector{
-				ratio:     ratio(k, c),
-				direction: dir(k, c),
-			}
-			if _, ok := ls[k]; !ok {
-				ls[k] = lineOfSight{
-					vectors: []vector{vec},
-				}
+				ratio:     r,
+				direction: d,
+				distance:  dist(k, c),
 			}
 
-			l := ls[k]
-			hasVector := false
+			ls.addVector(k, vec)
+			qr.addRatio(r, d)
+		}
+		qrm[k] = qr
+	}
+	fmt.Println(qrm.toString())
+}
 
-			for _, v := range l.vectors {
-				if v == vec {
-					hasVector = true
-					break
-				}
-			}
-			if hasVector {
-				continue
-			}
-			l.vectors = append(l.vectors, vec)
-			ls[k] = l
+func (q quadrantRatios) addRatio(r float64, d int) {
+	if _, ok := q[d]; !ok {
+		q[d] = []float64{}
+	}
+
+	rs := q[d]
+	for _, ratio := range rs {
+		if ratio == r {
+			return
 		}
 	}
 
-	max := 0
-	var c coord
-	for k, v := range ls {
-		if max < len(v.vectors) {
-			max = len(v.vectors)
-			c = k
+	rs = append(rs, r)
+	q[d] = rs
+}
+
+func (qrm quadrantRatiosMap) toString() string {
+	var s []string
+	for k, v := range qrm {
+		s = append(s, fmt.Sprintf("%d: %v", k, v))
+	}
+	return strings.Join(s, "\n")
+}
+
+func (ls lineOfSightMap) addVector(c coord, v vector) {
+	if _, oc := ls[c]; !oc {
+		ls[c] = lineOfSight{
+			vectors: []vector{v},
 		}
 	}
-	fmt.Println(c.x, c.y, max)
+
+	l := ls[c]
+	l.vectors = append(l.vectors, v)
+	ls[c] = l
 }
 
 func ratio(p1, p2 coord) float64 {
@@ -112,6 +134,12 @@ func ratio(p1, p2 coord) float64 {
 		return math.Inf(x)
 	}
 	return float64(x) / float64(y)
+}
+
+func dist(p1, p2 coord) int {
+	x := p1.x - p2.x
+	y := p1.y - p2.y
+	return x + y
 }
 
 func dir(p1, p2 coord) int {
@@ -124,22 +152,22 @@ func dir(p1, p2 coord) int {
 		return up
 	}
 	if y == 0 && x < 0 {
-		return left
-	}
-	if y == 0 && x > 0 {
 		return right
 	}
+	if y == 0 && x > 0 {
+		return left
+	}
 	if x > 0 && y < 0 {
-		return downRight
-	}
-	if x > 0 && y > 0 {
-		return upRight
-	}
-	if x < 0 && y < 0 {
 		return downLeft
 	}
-	if x < 0 && y > 0 {
+	if x > 0 && y > 0 {
 		return upLeft
+	}
+	if x < 0 && y < 0 {
+		return downRight
+	}
+	if x < 0 && y > 0 {
+		return upRight
 	}
 	return -1
 }
