@@ -2,15 +2,10 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
 	"github.com/johnny88/aoc2019/fileparse"
-)
-
-const (
-	iter = 1000
 )
 
 type point struct {
@@ -42,40 +37,42 @@ func main() {
 			velocity: point{x: 0, y: 0, z: 0},
 		})
 	}
+	mInitial := make(moons, len(mArr))
+	copy(mInitial, mArr)
 
-	for i := 0; i < iter; i++ {
+	count := 1
+	for {
 		mArr.applyGravity()
 		mArr.applyVelocity()
+		if mArr.equals(mInitial) {
+			fmt.Println(count)
+			break
+		}
+		count++
 	}
-	fmt.Println(mArr.energy())
 }
 
-func (mArr moons) energy() int {
-	sum := 0
-	for _, m := range mArr {
-		sum += m.energy()
+func (mArr moons) equals(mInitial moons) bool {
+	equal := true
+	for idx, m := range mArr {
+		if m != mInitial[idx] {
+			equal = false
+			break
+		}
 	}
-	return sum
-}
-
-func (m *moon) energy() int {
-	return m.position.energy() * m.velocity.energy()
-}
-
-func (p *point) energy() int {
-	return int(
-		math.Abs(float64(p.x)) +
-			math.Abs(float64(p.y)) +
-			math.Abs(float64(p.z)),
-	)
+	return equal
 }
 
 func (mArr moons) applyVelocity() {
 	for idx, m := range mArr {
+		// calc per demension iteratively, i.e. comment out and run again
 		p := point{
-			x: m.position.x + m.velocity.x,
-			y: m.position.y + m.velocity.y,
+			// x: m.position.x + m.velocity.x,
+			x: m.position.x,
+			// y: m.position.y + m.velocity.y,
+			y: m.position.y,
 			z: m.position.z + m.velocity.z,
+			// z: m.position.z,
 		}
 		mArr[idx] = moon{
 			position: p,
@@ -96,10 +93,14 @@ func (mArr moons) applyGravityToMoon(idx int) moon {
 		if j == idx {
 			continue
 		}
+		// calc per demension iteratively, i.e. comment out and run again
 		m.velocity = point{
-			x: m.velocity.x + gravityDelta(m.position.x, m2.position.x),
-			y: m.velocity.y + gravityDelta(m.position.y, m2.position.y),
+			// x: m.velocity.x + gravityDelta(m.position.x, m2.position.x),
+			x: m.velocity.x,
+			// y: m.velocity.y + gravityDelta(m.position.y, m2.position.y),
+			y: m.velocity.y,
 			z: m.velocity.z + gravityDelta(m.position.z, m2.position.z),
+			// z: m.velocity.z,
 		}
 	}
 	return m
