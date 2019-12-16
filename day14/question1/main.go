@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
@@ -11,7 +9,7 @@ import (
 
 type chemical struct {
 	name   string
-	amount float64
+	amount int
 }
 
 type chemicals []chemical
@@ -49,25 +47,20 @@ func main() {
 
 		eqMap[key.name] = []equation{equation{params: cArr, result: key}}
 	}
-	m := map[string]float64{}
-	calcOre(eqMap, "FUEL", 1, m)
-	// ore := float64(0)
+	m := map[string]int{}
+	leftovers := map[string]int{}
+	calcOre(eqMap, "FUEL", 1, m, leftovers)
+
 	for hasChemicals(m) {
-		currM := map[string]float64{}
+		currM := map[string]int{}
 		for key := range m {
-			calcOre(eqMap, key, m[key], currM)
-			if _, ok := currM[key]; ok {
-				currM[key] += m[key]
-			}
+			calcOre(eqMap, key, m[key], currM, leftovers)
 		}
-		// ore += currM["ORE"]
 		m = currM
-		fmt.Println(m)
 	}
-	fmt.Println(m["ORE"])
 }
 
-func hasChemicals(m map[string]float64) bool {
+func hasChemicals(m map[string]int) bool {
 	hasChemicals := false
 	for key := range m {
 		if key != "ORE" {
@@ -80,22 +73,22 @@ func hasChemicals(m map[string]float64) bool {
 
 func newChemical(input string) (chemical, error) {
 	arr := strings.Split(strings.TrimSpace(input), " ")
-	amount, err := strconv.ParseFloat(arr[0], 64)
+	amount, err := strconv.Atoi(arr[0])
 	if err != nil {
 		return chemical{}, err
 	}
 	return chemical{name: arr[1], amount: amount}, nil
 }
 
-func (c *chemical) toString() string {
-	return fmt.Sprintf("name: %s, amount: %f", c.name, c.amount)
-}
+// func (c *chemical) toString() string {
+// return fmt.Sprintf("name: %s, amount: %d", c.name, c.amount)
+// }
 
-func calcOre(e equationMap, key string, amount float64, m map[string]float64) {
+func calcOre(e equationMap, key string, amount int, m, leftovers map[string]int) {
 	for _, eq := range e[key] {
 		for _, p := range eq.params {
-			m[p.name] += math.Ceil(amount/eq.result.amount) * p.amount
-			fmt.Println(amount, key, eq.result.amount, p.name, m[p.name])
+			m[p.name] += (amount - (amount % eq.result.amount)) / eq.result.amount * p.amount
+			leftovers[key] += amount % eq.result.amount
 		}
 	}
 }
