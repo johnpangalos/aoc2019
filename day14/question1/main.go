@@ -1,15 +1,22 @@
 package main
 
 import (
+	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
 	"github.com/johnny88/aoc2019/fileparse"
 )
 
+const (
+	ore  = "ORE"
+	fuel = "FUEL"
+)
+
 type chemical struct {
 	name   string
-	amount int
+	amount float64
 }
 
 type chemicals []chemical
@@ -17,10 +24,11 @@ type equation struct {
 	params chemicals
 	result chemical
 }
-type equationMap map[string][]equation
+type equationMap map[string]equation
+type amountMap map[string]float64
 
 func main() {
-	scanner, err := fileparse.NewScanner("day14/test2.txt")
+	scanner, err := fileparse.NewScanner("day14/test4.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -45,50 +53,76 @@ func main() {
 			cArr = append(cArr, c)
 		}
 
-		eqMap[key.name] = []equation{equation{params: cArr, result: key}}
+		eqMap[key.name] = equation{params: cArr, result: key}
 	}
-	m := map[string]int{}
-	leftovers := map[string]int{}
-	calcOre(eqMap, "FUEL", 1, m, leftovers)
 
-	for hasChemicals(m) {
-		currM := map[string]int{}
-		for key := range m {
-			calcOre(eqMap, key, m[key], currM, leftovers)
-		}
-		m = currM
-	}
-}
+	toDo := []chemical{eqMap[fuel].result}
 
-func hasChemicals(m map[string]int) bool {
-	hasChemicals := false
-	for key := range m {
-		if key != "ORE" {
-			hasChemicals = true
-			break
+	requirements := []amountMap{}
+	count := 0
+	for len(toDo) > 0 {
+		required := make(amountMap)
+		for _, c := range toDo {
+			required = join(required, applyEquation(eqMap, c.name, c.amount))
+		}
+		toDo = []chemical{}
+		fmt.Println(required)
+		for k := range required {
+			if k == ore {
+				continue
+			}
+			for i := count - 1; i >= 1; i-- {
+				if val, ok := requirements[i][k]; ok {
+					toRemove := applyEquation(eqMap, k, val)
+					fmt.Println(k, toRemove)
+					required[k] += requirements[i][k]
+					requirements[i][k] = 0
+
+					for k, v := range toRemove {
+						required[k] -= v
+					}
+				}
+			}
+			toDo = append(toDo, chemical{name: k, amount: required[k]})
+		}
+		requirements = append(requirements, required)
+		count++
+	}
+
+	fmt.Println(requirements)
+	sum := float64(0)
+	for _, v := range requirements {
+		for k, r := range v {
+			if k == ore {
+				sum += r
+			}
 		}
 	}
-	return hasChemicals
+	fmt.Println(int(sum))
 }
 
 func newChemical(input string) (chemical, error) {
 	arr := strings.Split(strings.TrimSpace(input), " ")
-	amount, err := strconv.Atoi(arr[0])
+	amount, err := strconv.ParseFloat(arr[0], 64)
 	if err != nil {
 		return chemical{}, err
 	}
 	return chemical{name: arr[1], amount: amount}, nil
 }
 
-// func (c *chemical) toString() string {
-// return fmt.Sprintf("name: %s, amount: %d", c.name, c.amount)
-// }
-
-func calcOre(e equationMap, key string, amount int, m, leftovers map[string]int) {
-	for _, eq := range e[key] {
-		for _, p := range eq.params {
-			m[p.name] += (amount - (amount % eq.result.amount)) / eq.result.amount * p.amount
-			leftovers[key] += amount % eq.result.amount
-		}
+func applyEquation(e equationMap, key string, amount float64) amountMap {
+	amounts := make(amountMap)
+	eq := e[key]
+	for _, chem := range eq.params {
+		mult := math.Ceil(amount / eq.result.amount)
+		amounts[chem.name] = mult * chem.amount
 	}
+	return amounts
+}
+
+func join(m1, m2 amountMap) amountMap {
+	for k, v := range m1 {
+		m2[k] += v
+	}
+	return m2
 }
