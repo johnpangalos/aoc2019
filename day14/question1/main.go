@@ -28,7 +28,7 @@ type equationMap map[string]equation
 type amountMap map[string]float64
 
 func main() {
-	scanner, err := fileparse.NewScanner("day14/test4.txt")
+	scanner, err := fileparse.NewScanner("day14/input.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -66,15 +66,11 @@ func main() {
 			required = join(required, applyEquation(eqMap, c.name, c.amount))
 		}
 		toDo = []chemical{}
-		fmt.Println(required)
 		for k := range required {
-			if k == ore {
-				continue
-			}
+
 			for i := count - 1; i >= 1; i-- {
 				if val, ok := requirements[i][k]; ok {
 					toRemove := applyEquation(eqMap, k, val)
-					fmt.Println(k, toRemove)
 					required[k] += requirements[i][k]
 					requirements[i][k] = 0
 
@@ -83,13 +79,17 @@ func main() {
 					}
 				}
 			}
+		}
+		for k := range required {
+			if k == ore {
+				continue
+			}
 			toDo = append(toDo, chemical{name: k, amount: required[k]})
 		}
 		requirements = append(requirements, required)
 		count++
 	}
 
-	fmt.Println(requirements)
 	sum := float64(0)
 	for _, v := range requirements {
 		for k, r := range v {
