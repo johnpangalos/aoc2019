@@ -77,15 +77,11 @@ func runIntcode(vals []int) {
 	aMap[currCoord] = start
 	direction := north
 
-	count := 0
 	for {
 		idx := nextOp
 		c := code{op: vals[nextOp]}
 		if vals[nextOp] > 4 {
 			c = parseOpCode(vals[nextOp])
-		}
-		if c.op == halt {
-			break
 		}
 		nextOp = nextOp + opLengthMap[c.op]
 		out := performOp(direction, idx, &nextOp, vals, c)
@@ -103,13 +99,6 @@ func runIntcode(vals []int) {
 			case moveDone:
 				if _, ok := aMap[nCoord]; !ok {
 					aMap[nCoord] = empty
-					count++
-					time.Sleep(50 * time.Millisecond)
-					clearConsole()
-					fmt.Println(aMap.toString(currCoord))
-					fmt.Println("steps:", count)
-				} else {
-					count--
 				}
 				direction = nextDirectionClockwise(direction)
 				currCoord = nCoord
@@ -117,17 +106,22 @@ func runIntcode(vals []int) {
 				if _, ok := aMap[nCoord]; !ok {
 					aMap[nCoord] = tank
 				}
-				count++
 				direction = nextDirectionClockwise(direction)
+				currCoord = nCoord
 			}
 
-			if out == 2 {
+			origin := coord{x: 0, y: 0}
+			if nCoord == origin {
 				break
 			}
 		}
 	}
-
-	fmt.Println(count)
+	// var t coord
+	for k, v := range aMap {
+		if v == tank {
+			t = k
+		}
+	}
 }
 
 func clearConsole() {
@@ -345,4 +339,19 @@ func (a areaMap) toString(c coord) string {
 		s = strings.Join([]string{s, "\n"}, "")
 	}
 	return s
+}
+
+func (a areaMap) printToConsole(c coord) {
+	clearConsole()
+	fmt.Println(a.toString(c))
+	time.Sleep(100 * time.Millisecond)
+}
+
+func (a areaMap) emptySpace() {
+	totalSpace := 0
+	for _, v := range a {
+		if v == empty {
+			totalSpace++
+		}
+	}
 }
