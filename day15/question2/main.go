@@ -34,10 +34,11 @@ const (
 	west  = 3
 	east  = 4
 
-	wall  = "wall"
-	empty = "empty"
-	start = "start"
-	tank  = "tank"
+	wall   = "wall"
+	empty  = "empty"
+	start  = "start"
+	tank   = "tank"
+	oxygen = "oxygen"
 
 	foundWall = 0
 	moveDone  = 1
@@ -111,17 +112,61 @@ func runIntcode(vals []int) {
 			}
 
 			origin := coord{x: 0, y: 0}
+			aMap.printToConsole(currCoord, 1)
 			if nCoord == origin {
 				break
 			}
 		}
 	}
-	// var t coord
+	var t coord
 	for k, v := range aMap {
 		if v == tank {
 			t = k
 		}
 	}
+	oxygenPaths := []coord{t}
+	// don't count the first one...
+	count := -1
+	tmp := coord{x: 99999999, y: 99999999}
+	for len(oxygenPaths) > 0 {
+		newOxPaths := []coord{}
+		for _, v := range oxygenPaths {
+			newOxPaths = append(newOxPaths, emptyAdjactent(aMap, v)...)
+			aMap[v] = oxygen
+		}
+		oxygenPaths = newOxPaths
+		count++
+		aMap.printToConsole(tmp, 5)
+	}
+}
+
+func emptyAdjactent(a areaMap, c coord) []coord {
+	toCheck := []coord{
+		coord{
+			x: c.x - 1,
+			y: c.y,
+		},
+		coord{
+			x: c.x + 1,
+			y: c.y,
+		},
+		coord{
+			x: c.x,
+			y: c.y - 1,
+		},
+		coord{
+			x: c.x,
+			y: c.y + 1,
+		},
+	}
+	adj := []coord{}
+	for _, v := range toCheck {
+		if a[v] != empty && a[v] != start {
+			continue
+		}
+		adj = append(adj, v)
+	}
+	return adj
 }
 
 func clearConsole() {
@@ -298,22 +343,25 @@ func opToString(op int) string {
 }
 
 func (a areaMap) toString(c coord) string {
-	var minX, minY, maxX, maxY int
+	minX := -21
+	minY := -19
+	maxX := 19
+	maxY := 21
 	var s string
-	for k := range a {
-		if k.x < minX {
-			minX = k.x
-		}
-		if k.y < minY {
-			minY = k.y
-		}
-		if k.x > maxX {
-			maxX = k.x
-		}
-		if k.y > maxY {
-			maxY = k.y
-		}
-	}
+	// for k := range a {
+	// if k.x < minX {
+	// minX = k.x
+	// }
+	// if k.y < minY {
+	// minY = k.y
+	// }
+	// if k.x > maxX {
+	// maxX = k.x
+	// }
+	// if k.y > maxY {
+	// maxY = k.y
+	// }
+	// }
 	for j := minY; j < maxY+1; j++ {
 		for i := minX; i < maxX+1; i++ {
 			c2 := coord{x: i, y: j}
@@ -326,6 +374,9 @@ func (a areaMap) toString(c coord) string {
 			switch v {
 			case wall:
 				s = strings.Join([]string{s, "█"}, "")
+			case oxygen:
+				blue := color.New(color.FgBlue).SprintFunc()
+				s = strings.Join([]string{s, fmt.Sprintf("%s", blue("█"))}, "")
 			case empty:
 				s = strings.Join([]string{s, "·"}, "")
 			case tank:
@@ -333,7 +384,7 @@ func (a areaMap) toString(c coord) string {
 			case start:
 				s = strings.Join([]string{s, "E"}, "")
 			default:
-				s = strings.Join([]string{s, "?"}, "")
+				s = strings.Join([]string{s, "█"}, "")
 			}
 		}
 		s = strings.Join([]string{s, "\n"}, "")
@@ -341,10 +392,10 @@ func (a areaMap) toString(c coord) string {
 	return s
 }
 
-func (a areaMap) printToConsole(c coord) {
-	clearConsole()
+func (a areaMap) printToConsole(c coord, ms int) {
+	// clearConsole()
 	fmt.Println(a.toString(c))
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(time.Duration(ms) * time.Millisecond)
 }
 
 func (a areaMap) emptySpace() {
