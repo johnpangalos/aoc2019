@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
@@ -17,41 +16,59 @@ const (
 type signal []int
 
 func main() {
-	scanner, err := fileparse.NewScanner("day16/question2/test1.txt")
+	scanner, err := fileparse.NewScanner("day16/input.txt")
 	if err != nil {
 		panic(err)
 	}
 	defer scanner.Close()
-	input := scanner.PCStringParseInt()
+	t := ""
+	for scanner.Scan() {
+		t = scanner.Text()
+	}
+	var ts [repeat]string
+
+	for i := 0; i < repeat; i++ {
+		ts[i] = t
+	}
+	tFull := strings.Join(ts[:], "")
 	sig := signal{}
-	sig = input
+	for _, v := range tFull {
+		i, err := strconv.Atoi(string(v))
+		if err != nil {
+			panic(err)
+		}
+		sig = append(sig, i)
+	}
+
 	offestArr := sig[0:7]
 	offset, err := strconv.Atoi(offestArr.toString())
 	if err != nil {
 		panic(err)
 	}
 
-	sig = append(sig[(offset-1)%len(sig):], sig[:(offset-1)%len(sig)]...)
-	for i := 0; i < numPhases; i++ {
-		sums := signal{}
-		for i := range sig {
-			sum := 0
-			pat := repeatingPattern(len(sig), i, offset)
-			for j, v := range sig {
-				sum += v * pat[j]
-			}
-			sums = append(sums, int(math.Abs(float64(sum%10))))
+	sig = sig[offset:]
+	for phase := 0; phase < numPhases; phase++ {
+		tmp := make(signal, len(sig))
+		copy(tmp, sig)
+
+		sum := 0
+		for i := len(sig) - 1; i >= 0; i-- {
+			sum += sig[i]
+			tmp[i] = sum % 10
 		}
-		if err != nil {
-			panic(err)
-		}
-		sig = sums
+		sig = tmp
 	}
-	fmt.Println(sig.toString())
+	fmt.Println(sig.toStringOffset(0))
+}
+
+func abs(i int) int {
+	if i < 0 {
+		return i * -1
+	}
+	return i
 }
 
 func (sig signal) toStringOffset(offset int) string {
-	fmt.Println(len(sig), offset)
 	strArr := []string{}
 	for _, v := range sig[offset : offset+8] {
 		strArr = append(strArr, strconv.Itoa(v))
@@ -59,6 +76,7 @@ func (sig signal) toStringOffset(offset int) string {
 	s := strings.Join(strArr, "")
 	return s
 }
+
 func (sig signal) toString() string {
 	strArr := []string{}
 	for _, v := range sig {
@@ -68,20 +86,12 @@ func (sig signal) toString() string {
 	return s
 }
 
-func repeatingPattern(length, idx, offset int) []int {
+func inc(level, idx int) int {
+	return int(float64(idx+1)/float64(level+1)) % 4
+}
+
+func multiplier(level, idx int) int {
 	pattern := []int{0, 1, 0, -1}
-	repeatPattern := []int{}
-	inc := int(math.Floor(float64(offset) / 4))
-	count := (offset % (idx + 1*4)) % 4
-	fmt.Println(inc, count)
-	for i := 0; i < length+1; i++ {
-		repeatPattern = append(repeatPattern, pattern[inc%4])
-		if count == idx {
-			count = 0
-			inc++
-		} else {
-			count++
-		}
-	}
-	return repeatPattern
+	i := inc(level, idx)
+	return pattern[i]
 }
