@@ -85,7 +85,9 @@ func main() {
 	}
 
 	sum := 0
+	count := 0
 	for k, v := range a {
+		count++
 		if v != 35 {
 			continue
 		}
@@ -97,7 +99,9 @@ func main() {
 			sum += k.x * k.y
 		}
 	}
+	fmt.Println(count)
 	fmt.Println(sum)
+
 }
 
 func performOp(idx int, nextOp *int, vals []int, c code) int {

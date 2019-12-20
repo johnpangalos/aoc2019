@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/johnny88/aoc2019/fileparse"
 )
@@ -46,11 +47,15 @@ func main() {
 
 	vals := scanner.CommaStringParseInt()
 	vals = append(vals, make([]int, 9999999)...)
+	vals[0] = 2
 
 	opLengthMap := getOpLengthMap()
 
 	nextOp := 0
 
+	currInput := 0
+	currOut := 0
+	str := ""
 	for {
 		idx := nextOp
 		c := code{op: vals[nextOp]}
@@ -61,13 +66,20 @@ func main() {
 			break
 		}
 
+		input := []rune{
+			'A', ',', 'A', ',', 'B', ',', 'C', ',', 'B', ',', 'C', ',', 'B', ',', 'C', ',', 'B', ',', 'A', '\n',
+			'R', ',', '1', '0', ',', 'L', ',', '1', '2', ',', 'R', ',', '6', '\n',
+			'R', ',', '6', ',', 'R', ',', '1', '0', ',', 'R', ',', '1', '2', ',', 'R', ',', '6', '\n',
+			'R', ',', '1', '0', ',', 'L', ',', '1', '2', ',', 'L', ',', '1', '2', '\n',
+			'y', '\n',
+		}
 		nextOp = nextOp + opLengthMap[c.op]
 
-		performOp(idx, &nextOp, vals, c)
+		performOp(idx, &nextOp, vals, c, input, &currInput, &currOut, &str)
 	}
 }
 
-func performOp(idx int, nextOp *int, vals []int, c code) {
+func performOp(idx int, nextOp *int, vals []int, c code, input []rune, i, j *int, s *string) {
 	p1, p2, p3 := getParams(vals, c, idx)
 	switch c.op {
 	case add:
@@ -75,16 +87,22 @@ func performOp(idx int, nextOp *int, vals []int, c code) {
 	case mult:
 		vals[p3] = p1 * p2
 	case saveAddr:
-		vals[p1] = inputVal
+		fmt.Println(*i)
+		vals[p1] = int(input[*i])
+		*i++
 	case display:
-		if p1 == 35 {
-			fmt.Printf("#")
-		} else if p1 == 46 {
-			fmt.Printf(".")
-		} else if p1 == 10 {
-			fmt.Printf("\n")
+		if p1 == '.' || p1 == '#' || p1 == '^' || p1 == 'v' || p1 == '>' || p1 == '<' || p1 == '\n' {
+			tmp := fmt.Sprintf("%c", rune(p1))
+			*s = strings.Join([]string{*s, tmp}, "")
+			*j++
+			if *j == 1717 {
+				time.Sleep(30 * time.Millisecond)
+				fmt.Printf(*s)
+				*s = ""
+				*j = 0
+			}
 		} else {
-			fmt.Printf(">")
+			// fmt.Println(p1)
 		}
 	case jumpIfTrue:
 		if p1 > 0 {
